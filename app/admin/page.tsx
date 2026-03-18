@@ -348,7 +348,7 @@ function CategoryManager({
     const uid = (addUidInput[catId] || "").trim();
     if (!uid || !players.find((p) => p.uid === uid)) return;
     const newCustom = categories.custom.map((c) =>
-      c.id === catId ? { ...c, uids: [...new Set([...c.uids, uid])] } : c
+      c.id === catId ? { ...c, uids: Array.from(new Set([...c.uids, uid])) } : c
     );
     onChange({ ...categories, custom: newCustom });
     setAddUidInput((prev) => ({ ...prev, [catId]: "" }));
