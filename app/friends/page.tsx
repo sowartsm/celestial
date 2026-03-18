@@ -7,7 +7,7 @@ import PlayerCard from "@/components/PlayerCard";
 import CategoryBar from "@/components/CategoryBar";
 import SortControls from "@/components/SortControls";
 
-const FRIENDS_PASSWORD = "friends2024"; // change via env FRIENDS_PASSWORD
+const FRIENDS_PASSWORD = "meowl2077"; // change via env FRIENDS_PASSWORD
 
 // ─── Login Gate ───────────────────────────────────────────────────────────────
 function LoginGate({ onLogin }: { onLogin: () => void }) {

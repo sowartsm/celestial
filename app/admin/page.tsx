@@ -23,8 +23,9 @@ function StarBtn({ isStarred, onToggle }: { isStarred: boolean; onToggle: () => 
   );
 }
 
-const ADMIN_PASSWORD = "genshin2024";
-
+const ADMIN_PASSWORD =
+  process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "larry78";
+  
 // ─── Login Gate ───────────────────────────────────────────────────────────────
 function LoginGate({ onLogin }: { onLogin: (pw: string) => void }) {
   const [pw, setPw] = useState("");
