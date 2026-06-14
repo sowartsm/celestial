@@ -228,19 +228,20 @@ function EditableRow({
     <>
       <tr style={{ background: "rgba(200,169,110,0.04)" }}>
         <td colSpan={selectMode ? 9 : 8} style={{ padding: "0.75rem 1rem" }}>
-          <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+          <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
+            {/* Field label helper */}
+
             {/* Date/Time + filename */}
-            <div style={{ minWidth: 200 }}>
-              <div className="flex gap-1.5 mb-1.5">
-                <input type="date" className="edit-input" value={dateVal}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                  style={{ colorScheme: "dark", fontSize: "0.82rem", minWidth: 0, flex: "1 1 0%" }} />
-                <input type="time" className="edit-input" value={timeVal}
-                  onChange={(e) => handleTimeChange(e.target.value)}
-                  style={{ colorScheme: "dark", fontSize: "0.82rem", width: 88, flexShrink: 0 }} />
-              </div>
+            <div style={{ minWidth: 140 }}>
+              <p style={{ fontSize: "0.65rem", color: "rgba(167,139,250,0.45)", fontFamily: "'Cinzel', serif", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "0.3rem" }}>Date / Time</p>
+              <input type="date" className="edit-input mb-1.5" value={dateVal}
+                onChange={(e) => handleDateChange(e.target.value)}
+                style={{ colorScheme: "dark", fontSize: "0.82rem", width: "100%" }} />
+              <input type="time" className="edit-input" value={timeVal}
+                onChange={(e) => handleTimeChange(e.target.value)}
+                style={{ colorScheme: "dark", fontSize: "0.82rem", width: "100%" }} />
               {draft.file && (
-                <p style={{ color: "rgba(196,181,253,0.4)", fontSize: "0.65rem", fontFamily: "'JetBrains Mono', monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={draft.file}>
+                <p style={{ color: "rgba(196,181,253,0.4)", fontSize: "0.65rem", fontFamily: "'JetBrains Mono', monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: "0.35rem" }} title={draft.file}>
                   {draft.file}
                 </p>
               )}
@@ -248,6 +249,7 @@ function EditableRow({
 
             {/* Name + Game ID */}
             <div>
+              <p style={{ fontSize: "0.65rem", color: "rgba(167,139,250,0.45)", fontFamily: "'Cinzel', serif", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "0.3rem" }}>Name</p>
               <input className="edit-input mb-1.5" value={draft.name}
                 onChange={(e) => set("name", e.target.value)} placeholder="Name" />
               <input className="edit-input" value={draft.gameId || ""}
@@ -257,11 +259,13 @@ function EditableRow({
 
             {/* Nicknames */}
             <div>
+              <p style={{ fontSize: "0.65rem", color: "rgba(167,139,250,0.45)", fontFamily: "'Cinzel', serif", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "0.3rem" }}>Nicknames</p>
               <NicknameEditor value={draft.nickname} onChange={(v) => set("nickname", v)} />
             </div>
 
             {/* UID */}
             <div>
+              <p style={{ fontSize: "0.65rem", color: "rgba(167,139,250,0.45)", fontFamily: "'Cinzel', serif", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "0.3rem" }}>UID</p>
               <input className="edit-input" value={draft.uid}
                 onChange={(e) => set("uid", e.target.value.replace(/\D/g, ""))}
                 placeholder="UID" style={{ fontFamily: "'JetBrains Mono', monospace" }} />
@@ -269,6 +273,7 @@ function EditableRow({
 
             {/* Origin */}
             <div>
+              <p style={{ fontSize: "0.65rem", color: "rgba(167,139,250,0.45)", fontFamily: "'Cinzel', serif", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "0.3rem" }}>Origin</p>
               <input className="edit-input" value={draft.origin || ""}
                 onChange={(e) => set("origin", e.target.value)} placeholder="Origin / country"
                 style={{ fontSize: "0.85rem" }} />
@@ -276,6 +281,7 @@ function EditableRow({
 
             {/* Relationship - dropdown of existing values + freeform new */}
             <div>
+              <p style={{ fontSize: "0.65rem", color: "rgba(167,139,250,0.45)", fontFamily: "'Cinzel', serif", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "0.3rem" }}>Relationship</p>
               <select
                 className="edit-input mb-1.5"
                 value={allRelationships.includes(draft.relationship || "") ? draft.relationship : (draft.relationship ? "__custom__" : "")}
@@ -299,6 +305,7 @@ function EditableRow({
 
             {/* Actions */}
             <div className="flex gap-2 flex-wrap items-start content-start">
+              <p style={{ fontSize: "0.65rem", color: "rgba(167,139,250,0.45)", fontFamily: "'Cinzel', serif", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "0.3rem", width: "100%" }}>Actions</p>
               <button className="btn-gold text-xs px-3 py-1.5" onClick={() => onSave(draft)}>
                 {isNew ? "Add" : "Save"}
               </button>
