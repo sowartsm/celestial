@@ -1,37 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import type { CategoriesData } from "@/lib/types";
 
-const CATEGORIES_PATH = path.join(process.cwd(), "public", "data", "categories.json");
+export const dynamic = "force-dynamic";
 
-const DEFAULT_CATEGORIES: CategoriesData = {
-  starred: [],
-  custom: [],
-};
-
-function readCategories(): CategoriesData {
-  try {
-    if (!fs.existsSync(CATEGORIES_PATH)) return DEFAULT_CATEGORIES;
-    const raw = fs.readFileSync(CATEGORIES_PATH, "utf-8");
-    return JSON.parse(raw);
-  } catch {
-    return DEFAULT_CATEGORIES;
-  }
-}
+const DEFAULT_CATEGORIES: CategoriesData = { starred: [], custom: [] };
 
 export async function GET() {
-  return NextResponse.json(readCategories());
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("categories")
+      .select("starred, custom")
+      .eq("id", "main")
+      .single();
+
+    if (error || !data) return NextResponse.json(DEFAULT_CATEGORIES);
+
+    return NextResponse.json({
+      starred: data.starred || [],
+      custom: data.custom || [],
+    });
+  } catch {
+    return NextResponse.json(DEFAULT_CATEGORIES);
+  }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { categories, password } = body;
-    if (password !== process.env.ADMIN_PASSWORD && password !== "genshin2024") {
+
+    if (password !== process.env.ADMIN_PASSWORD) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    fs.writeFileSync(CATEGORIES_PATH, JSON.stringify(categories, null, 2), "utf-8");
+
+    const { error } = await supabaseAdmin
+      .from("categories")
+      .upsert(
+        { id: "main", starred: categories.starred, custom: categories.custom },
+        { onConflict: "id" }
+      );
+
+    if (error) throw error;
+
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Failed to save categories" }, { status: 500 });

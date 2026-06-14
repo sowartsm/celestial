@@ -1,3 +1,4 @@
+console.log("PLAYERS ROUTE LOADING");
 import type { Player, CategoriesData, SortConfig } from "./types";
 export { splitNicknames, joinNicknames } from "./types";
 

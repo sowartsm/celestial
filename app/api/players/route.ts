@@ -1,40 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
-import Papa from "papaparse";
-import { parsePlayers } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { parseDateFromFilename } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-const CSV_PATH = path.join(process.cwd(), "public", "data", "players.csv");
-
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    if (!fs.existsSync(CSV_PATH)) {
-      return NextResponse.json({ players: [] });
-    }
-    const content = fs.readFileSync(CSV_PATH, "utf-8");
-    const result = Papa.parse(content, { header: true, skipEmptyLines: true });
-    const players = parsePlayers(result.data as Record<string, string>[]);
+    const uid = req.nextUrl.searchParams.get("uid");
+    let query = supabase.from("nemesam").select("*");
+    if (uid) query = query.eq("uid", uid);
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const players = (data || []).map((row: any) => ({
+      ...row,
+      date: parseDateFromFilename(row.file),
+    }));
+
     return NextResponse.json({ players });
-  } catch (e) {
-    return NextResponse.json({ error: "Failed to read CSV" }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Failed to fetch players" }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
-  // Admin: write entire player array back as CSV
   try {
-    const { players, password } = await req.json();
-    if (password !== process.env.ADMIN_PASSWORD && password !== "genshin2024") {
+    const { action, player, password } = await req.json();
+
+    if (password !== process.env.ADMIN_PASSWORD) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { playersToCSV } = await import("@/lib/utils");
-    const csv = playersToCSV(players);
-    fs.writeFileSync(CSV_PATH, csv, "utf-8");
+    // Strip derived fields not stored in Supabase
+    const { date, ...playerData } = player;
+
+    if (action === "insert") {
+      const { error } = await supabaseAdmin.from("nemesam").insert(playerData);
+      if (error) { console.error("Supabase insert error:", error); throw error; }
+    } else if (action === "update") {
+      const { error } = await supabaseAdmin
+        .from("nemesam")
+        .update(playerData)
+        .eq("uid", player.uid);
+      if (error) { console.error("Supabase update error:", error); throw error; }
+    } else if (action === "delete") {
+      const { error } = await supabaseAdmin
+        .from("nemesam")
+        .delete()
+        .eq("uid", player.uid);
+      if (error) { console.error("Supabase delete error:", error); throw error; }
+    }
+
     return NextResponse.json({ success: true });
-  } catch (e) {
-    return NextResponse.json({ error: "Failed to write CSV" }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Failed to perform action" }, { status: 500 });
   }
 }
