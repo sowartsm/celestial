@@ -28,24 +28,31 @@ function NoteDot({ color }: { color: "green" | "blue" | "red" }) {
   );
 }
 
+function TagChip({ label, color }: { label: string; color: string }) {
+  return (
+    <span style={{
+      fontSize: "0.65rem", padding: "0.1rem 0.5rem", borderRadius: "9999px",
+      background: `${color}14`, border: `1px solid ${color}33`, color: `${color}bb`,
+      whiteSpace: "nowrap",
+    }}>{label}</span>
+  );
+}
+
 export function PlayerModal({
-  player,
-  onClose,
-  viewLevel = "public",
+  player, onClose, viewLevel = "public",
 }: {
-  player: Player;
-  onClose: () => void;
-  viewLevel?: ViewLevel;
+  player: Player; onClose: () => void; viewLevel?: ViewLevel;
 }) {
   const nicks = splitNicknames(player.nickname);
   const hasPublicNote  = !!player.note?.trim();
   const hasFriendNote  = !!player.friendNote?.trim();
   const hasPrivateNote = !!player.privateNote?.trim();
+  const tags = (player.tags || "").split("|").filter(Boolean);
+  const isFriendOrAdmin = viewLevel === "friend" || viewLevel === "admin";
 
   return (
     <div className="note-modal modal-backdrop" onClick={onClose}>
       <div className="note-modal-box" onClick={(e) => e.stopPropagation()}>
-
         <button onClick={onClose} className="absolute top-4 right-4"
           style={{ color: "rgba(200,169,110,0.35)", transition: "color 0.2s" }}
           onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(200,169,110,0.8)")}
@@ -56,15 +63,13 @@ export function PlayerModal({
           </svg>
         </button>
 
-        {/* Name */}
         <p className="font-display font-bold mb-1 pr-8"
           style={{ fontSize: "1.35rem", color: "var(--lav-200)", letterSpacing: "0.04em" }}>
           {player.name}
         </p>
 
-        {/* Nicknames — friend + admin */}
-        {(viewLevel === "friend" || viewLevel === "admin") && nicks.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
+        {isFriendOrAdmin && nicks.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
             {nicks.map((n) => (
               <span key={n} style={{
                 background: "rgba(196,181,253,0.1)", border: "1px solid rgba(196,181,253,0.22)",
@@ -72,6 +77,15 @@ export function PlayerModal({
                 fontStyle: "italic", padding: "0.15rem 0.6rem", borderRadius: "9999px"
               }}>{n}</span>
             ))}
+          </div>
+        )}
+
+        {/* Origin + Relationship */}
+        {isFriendOrAdmin && (player.origin || player.relationship || tags.length > 0) && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {player.origin && <TagChip label={`@ ${player.origin}`} color="#2dd4bf" />}
+            {player.relationship && <TagChip label={`◆ ${player.relationship}`} color="#c8a96e" />}
+            {tags.map(t => <TagChip key={t} label={`# ${t}`} color="#a78bfa" />)}
           </div>
         )}
 
@@ -86,48 +100,33 @@ export function PlayerModal({
           )}
         </div>
 
-        {/* Public note */}
         {hasPublicNote && (
           <div className="rounded-xl p-4 mb-3" style={{
             background: "rgba(45,212,191,0.04)", border: "1px solid rgba(45,212,191,0.14)",
             borderLeft: "3px solid rgba(45,212,191,0.35)"
           }}>
-            <p style={{ color: "rgba(94,234,212,0.45)", fontSize: "0.72rem", fontFamily: "'Cinzel', serif", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
-              Note
-            </p>
-            <p style={{ color: "rgba(220,210,255,0.88)", fontSize: "0.97rem", lineHeight: 1.65, whiteSpace: "pre-wrap" }}>
-              {player.note}
-            </p>
+            <p style={{ color: "rgba(94,234,212,0.45)", fontSize: "0.72rem", fontFamily: "'Cinzel', serif", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "0.5rem" }}>Note</p>
+            <p style={{ color: "rgba(220,210,255,0.88)", fontSize: "0.97rem", lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{player.note}</p>
           </div>
         )}
 
-        {/* Friend note — friend + admin */}
         {(viewLevel === "friend" || viewLevel === "admin") && hasFriendNote && (
           <div className="rounded-xl p-4 mb-3" style={{
             background: "rgba(125,211,252,0.04)", border: "1px solid rgba(125,211,252,0.14)",
             borderLeft: "3px solid rgba(125,211,252,0.35)"
           }}>
-            <p style={{ color: "rgba(125,211,252,0.5)", fontSize: "0.72rem", fontFamily: "'Cinzel', serif", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
-              Friends Note
-            </p>
-            <p style={{ color: "rgba(220,210,255,0.88)", fontSize: "0.97rem", lineHeight: 1.65, whiteSpace: "pre-wrap" }}>
-              {player.friendNote}
-            </p>
+            <p style={{ color: "rgba(125,211,252,0.5)", fontSize: "0.72rem", fontFamily: "'Cinzel', serif", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "0.5rem" }}>Friends Note</p>
+            <p style={{ color: "rgba(220,210,255,0.88)", fontSize: "0.97rem", lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{player.friendNote}</p>
           </div>
         )}
 
-        {/* Private note — admin only */}
         {viewLevel === "admin" && hasPrivateNote && (
           <div className="rounded-xl p-4" style={{
             background: "rgba(248,113,113,0.04)", border: "1px solid rgba(248,113,113,0.14)",
             borderLeft: "3px solid rgba(248,113,113,0.35)"
           }}>
-            <p style={{ color: "rgba(248,113,113,0.5)", fontSize: "0.72rem", fontFamily: "'Cinzel', serif", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
-              Private Note
-            </p>
-            <p style={{ color: "rgba(220,210,255,0.88)", fontSize: "0.97rem", lineHeight: 1.65, whiteSpace: "pre-wrap" }}>
-              {player.privateNote}
-            </p>
+            <p style={{ color: "rgba(248,113,113,0.5)", fontSize: "0.72rem", fontFamily: "'Cinzel', serif", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "0.5rem" }}>Private Note</p>
+            <p style={{ color: "rgba(220,210,255,0.88)", fontSize: "0.97rem", lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{player.privateNote}</p>
           </div>
         )}
       </div>
@@ -136,31 +135,22 @@ export function PlayerModal({
 }
 
 export default function PlayerCard({
-  player,
-  index = 0,
-  isStarred = false,
-  onToggleStar,
-  showNoteDot = false,
-  viewLevel = "public",
+  player, index = 0, isStarred = false, onToggleStar,
+  showNoteDot = false, viewLevel = "public",
 }: PlayerCardProps) {
   const [showModal, setShowModal] = useState(false);
   const hasPublicNote  = !!player.note?.trim();
   const hasFriendNote  = !!player.friendNote?.trim();
   const hasPrivateNote = !!player.privateNote?.trim();
-
-  // Dot logic per level:
-  // public:  green if public note + showNoteDot, nothing otherwise
-  // friend:  green if public, blue if friend-only
-  // admin:   green if public, blue if friend-only, red if private-only
+  const tags = (player.tags || "").split("|").filter(Boolean);
   const isFriendOrAdmin = viewLevel === "friend" || viewLevel === "admin";
-  const isAdmin         = viewLevel === "admin";
+  const isAdmin = viewLevel === "admin";
 
   let dotColor: "green" | "blue" | "red" | null = null;
   if (hasPublicNote && (showNoteDot || isFriendOrAdmin)) dotColor = "green";
   else if (!hasPublicNote && hasFriendNote && isFriendOrAdmin) dotColor = "blue";
   else if (!hasPublicNote && !hasFriendNote && hasPrivateNote && isAdmin) dotColor = "red";
 
-  // Clickable if viewer can see any note they have access to
   const hasAnyVisibleNote = hasPublicNote
     || (isFriendOrAdmin && hasFriendNote)
     || (isAdmin && hasPrivateNote);
@@ -169,31 +159,46 @@ export default function PlayerCard({
   return (
     <>
       <div
-        className={`player-card glass-gold rounded-xl p-5 animate-fade-in-up
-          ${isClickable ? "cursor-pointer" : ""}
-          ${dotColor === "green" ? "has-note" : ""}`}
+        className={`player-card glass-gold rounded-xl p-5 animate-fade-in-up ${isClickable ? "cursor-pointer" : ""} ${dotColor === "green" ? "has-note" : ""}`}
         style={{ animationDelay: `${index * 40}ms`, animationFillMode: "both" }}
         onClick={isClickable ? () => setShowModal(true) : undefined}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <p className="font-display font-semibold truncate"
                 style={{ fontSize: "1.05rem", color: "var(--lav-300)", letterSpacing: "0.02em" }}>
                 {player.name || "Unknown"}
               </p>
               {dotColor && <NoteDot color={dotColor} />}
+              {isFriendOrAdmin && player.relationship && (
+                <span style={{
+                  fontSize: "0.6rem", padding: "0.1rem 0.5rem", borderRadius: "9999px",
+                  background: "rgba(200,169,110,0.1)", border: "1px solid rgba(200,169,110,0.25)",
+                  color: "rgba(200,169,110,0.7)", fontFamily: "'Cinzel', serif", letterSpacing: "0.05em",
+                  whiteSpace: "nowrap",
+                }}>{player.relationship.toUpperCase()}</span>
+              )}
             </div>
             {player.date && (
               <p style={{ color: "rgba(94,234,212,0.5)", fontSize: "0.82rem", marginTop: "0.1rem" }}>
                 {formatDate(player.date)}
               </p>
             )}
+            {/* Origin only — no tags on cards */}
+            {isFriendOrAdmin && player.origin && (
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                <span style={{
+                  fontSize: "0.65rem", padding: "0.1rem 0.5rem", borderRadius: "9999px",
+                  background: "rgba(45,212,191,0.08)", border: "1px solid rgba(45,212,191,0.2)",
+                  color: "rgba(45,212,191,0.6)", whiteSpace: "nowrap",
+                }}>@ {player.origin}</span>
+              </div>
+            )}
           </div>
 
           {onToggleStar && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onToggleStar(player.uid); }}
+            <button onClick={(e) => { e.stopPropagation(); onToggleStar(player.uid); }}
               className={`star-btn flex-shrink-0 ${isStarred ? "active" : ""}`}>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                 fill={isStarred ? "currentColor" : "none"} stroke="currentColor"
@@ -209,15 +214,9 @@ export default function PlayerCard({
 
         <div className="flex items-center justify-between">
           <p className="uid-badge">UID {player.uid}</p>
-          {dotColor === "green" && (
-            <span style={{ color: "rgba(45,212,191,0.45)", fontSize: "0.78rem", fontFamily: "'Cinzel', serif", letterSpacing: "0.05em" }}>note ✦</span>
-          )}
-          {dotColor === "blue" && (
-            <span style={{ color: "rgba(125,211,252,0.45)", fontSize: "0.78rem", fontFamily: "'Cinzel', serif", letterSpacing: "0.05em" }}>note ✦</span>
-          )}
-          {dotColor === "red" && (
-            <span style={{ color: "rgba(248,113,113,0.35)", fontSize: "0.78rem", fontFamily: "'Cinzel', serif", letterSpacing: "0.05em" }}>private ✦</span>
-          )}
+          {dotColor === "green" && <span style={{ color: "rgba(45,212,191,0.45)", fontSize: "0.78rem", fontFamily: "'Cinzel', serif", letterSpacing: "0.05em" }}>note ✦</span>}
+          {dotColor === "blue" && <span style={{ color: "rgba(125,211,252,0.45)", fontSize: "0.78rem", fontFamily: "'Cinzel', serif", letterSpacing: "0.05em" }}>note ✦</span>}
+          {dotColor === "red" && <span style={{ color: "rgba(248,113,113,0.35)", fontSize: "0.78rem", fontFamily: "'Cinzel', serif", letterSpacing: "0.05em" }}>private ✦</span>}
         </div>
       </div>
 

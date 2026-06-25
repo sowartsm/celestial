@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import type { Player, CategoriesData, SortConfig } from "@/lib/types";
 import { filterByCategory, sortPlayers, splitNicknames } from "@/lib/utils";
 import PlayerCard from "@/components/PlayerCard";
 import CategoryBar from "@/components/CategoryBar";
 import SortControls from "@/components/SortControls";
 
-const FRIENDS_PASSWORD = "meowl2077"; // change via env FRIENDS_PASSWORD
+const FRIENDS_PASSWORD = "meowl2077";
 
 // ─── Login Gate ───────────────────────────────────────────────────────────────
 function LoginGate({ onLogin }: { onLogin: () => void }) {
@@ -31,10 +31,8 @@ function LoginGate({ onLogin }: { onLogin: () => void }) {
         style={{ border: "1px solid rgba(125,211,252,0.25)" }}>
         <div className="mb-6">
           <div className="divider-gold w-24 mx-auto mb-4" />
-          <h1 className="font-display text-2xl tracking-widest mb-1"
-            style={{ color: "var(--lav-300)" }}>Friends Access</h1>
-          <p className="text-xs tracking-widest uppercase"
-            style={{ color: "rgba(196,181,253,0.35)" }}>Traveler Registry</p>
+          <h1 className="font-display text-2xl tracking-widest mb-1" style={{ color: "var(--lav-300)" }}>Friends Access</h1>
+          <p className="text-xs tracking-widest uppercase" style={{ color: "rgba(196,181,253,0.35)" }}>Traveler Registry</p>
           <div className="divider-gold w-24 mx-auto mt-4" />
         </div>
         <input type="password" value={pw}
@@ -43,64 +41,44 @@ function LoginGate({ onLogin }: { onLogin: () => void }) {
           placeholder="Enter password"
           className="edit-input text-center mb-4 py-3"
           style={{ borderColor: error ? "rgba(248,113,113,0.6)" : undefined, fontSize: "1rem" }} />
-        {error && (
-          <p className="text-xs mb-3" style={{ color: "rgba(248,113,113,0.8)" }}>
-            Incorrect password
-          </p>
-        )}
+        {error && <p className="text-xs mb-3" style={{ color: "rgba(248,113,113,0.8)" }}>Incorrect password</p>}
         <button className="btn-gold w-full py-3" onClick={attempt}>Enter</button>
-        <div className="mt-6 flex gap-4 justify-center">
-          <a href="/" className="text-xs" style={{ color: "rgba(196,181,253,0.35)" }}>
-            ← Public
-          </a>
+        <div className="mt-6">
+          <a href="/" className="text-xs" style={{ color: "rgba(196,181,253,0.35)" }}>← Public</a>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Friends Search Box ───────────────────────────────────────────────────────
-function FriendsSearchBox({ value, mode, onValueChange, onModeChange }: {
-  value: string; mode: "uid" | "name";
-  onValueChange: (v: string) => void; onModeChange: (m: "uid" | "name") => void;
+// ─── Search Box ───────────────────────────────────────────────────────────────
+function SearchBox({ value, onValueChange, inputRef }: {
+  value: string;
+  onValueChange: (v: string) => void;
+  inputRef?: React.RefObject<HTMLInputElement>;
 }) {
   return (
-    <div className="flex flex-col gap-2 w-full max-w-sm">
-      <div className="flex gap-1.5 justify-center">
-        {(["uid", "name"] as const).map((m) => (
-          <button key={m} onClick={() => { onModeChange(m); onValueChange(""); }}
-            className={`cat-pill text-xs ${mode === m ? "cat-pill-active" : "cat-pill-inactive"}`}>
-            {m === "uid" ? "# UID" : "✦ Name"}
-          </button>
-        ))}
-      </div>
-      <div className="relative flex items-center">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-          strokeWidth={1.5} stroke="currentColor"
-          className="absolute left-3 w-4 h-4 pointer-events-none"
-          style={{ color: "rgba(196,181,253,0.4)" }}>
-          <path strokeLinecap="round" strokeLinejoin="round"
-            d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-        </svg>
-        <input
-          type="text"
-          inputMode={mode === "uid" ? "numeric" : "text"}
-          value={value}
-          onChange={(e) => onValueChange(mode === "uid" ? e.target.value.replace(/\D/g, "") : e.target.value)}
-          placeholder={mode === "uid" ? "Enter full UID..." : "Search by name or nickname..."}
-          className="search-input w-full rounded-xl pl-9 pr-9 py-3"
-          style={{ fontSize: "1rem", letterSpacing: mode === "uid" ? "0.12em" : "0.02em", textAlign: "left" }}
-        />
-        {value && (
-          <button className="absolute right-3" style={{ color: "rgba(196,181,253,0.4)" }}
-            onClick={() => onValueChange("")}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-              strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        )}
-      </div>
+    <div className="relative flex items-center w-full max-w-md mx-auto">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+        strokeWidth={1.5} stroke="currentColor"
+        className="absolute left-4 w-4 h-4 pointer-events-none"
+        style={{ color: "rgba(196,181,253,0.4)" }}>
+        <path strokeLinecap="round" strokeLinejoin="round"
+          d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+      </svg>
+      <input ref={inputRef} type="text" value={value}
+        onChange={(e) => onValueChange(e.target.value)}
+        placeholder="Search name, UID, nickname, tag, origin..."
+        className="search-input w-full rounded-xl py-3"
+        style={{ fontSize: "0.95rem", paddingLeft: "2.5rem", paddingRight: "2.5rem" }} />
+      {value && (
+        <button className="absolute right-4" style={{ color: "rgba(196,181,253,0.4)" }} onClick={() => onValueChange("")}>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+            strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }
@@ -111,10 +89,13 @@ export default function FriendsPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [categories, setCategories] = useState<CategoriesData>({ starred: [], custom: [] });
   const [search, setSearch] = useState("");
-  const [searchMode, setSearchMode] = useState<"uid" | "name">("uid");
   const [activeCategory, setActiveCategory] = useState("dated");
   const [sort, setSort] = useState<SortConfig>({ field: "date", order: "asc" });
   const [loading, setLoading] = useState(true);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [activeOriginFilter, setActiveOriginFilter] = useState<string | null>(null);
+  const [activeRelFilter, setActiveRelFilter] = useState<string | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (sessionStorage.getItem("friends_auth") === "1") setAuthed(true);
@@ -132,30 +113,94 @@ export default function FriendsPage() {
     });
   }, [authed]);
 
+  // Keyboard shortcut: Ctrl+E to focus search, Escape to clear
+  useEffect(() => {
+    if (!authed) return;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "e") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      if (e.key === "Escape") {
+        if (search) setSearch("");
+        else (e.target as HTMLElement)?.blur?.();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [authed, search]);
+
+  const allTags = useMemo(() => {
+    const s = new Set<string>();
+    players.forEach(p => (p.tags || "").split("|").filter(Boolean).forEach(t => s.add(t)));
+    return Array.from(s).sort();
+  }, [players]);
+
+  const allOrigins = useMemo(() => {
+    const s = new Set<string>();
+    players.forEach(p => { if (p.origin) s.add(p.origin); });
+    return Array.from(s).sort();
+  }, [players]);
+
+  const allRelationships = useMemo(() => {
+    const s = new Set<string>();
+    players.forEach(p => { if (p.relationship) s.add(p.relationship); });
+    return Array.from(s).sort();
+  }, [players]);
+
   const displayPlayers = useMemo(() => {
-    if (!search.trim()) {
-      return sortPlayers(filterByCategory(players, activeCategory, categories), sort);
+    let filtered = players;
+
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      filtered = filtered.filter((p) => {
+        const nicks = splitNicknames(p.nickname).map(n => n.toLowerCase());
+        const tags = (p.tags || "").split("|").map(t => t.trim().toLowerCase());
+        return (
+          p.uid === q ||
+          p.uid.startsWith(q) ||
+          p.name.toLowerCase().includes(q) ||
+          nicks.some(n => n.includes(q)) ||
+          tags.some(t => t.includes(q)) ||
+          (p.origin || "").toLowerCase().includes(q) ||
+          (p.relationship || "").toLowerCase().includes(q)
+        );
+      });
+    } else {
+      filtered = filterByCategory(filtered, activeCategory, categories);
     }
-    const q = search.trim().toLowerCase();
-    if (searchMode === "uid") {
-      return sortPlayers(players.filter((p) => p.uid === q), sort);
+
+    if (activeTag) {
+      filtered = filtered.filter(p =>
+        (p.tags || "").split("|").map(t => t.trim()).includes(activeTag)
+      );
     }
-    return sortPlayers(players.filter((p) => {
-      const nicks = splitNicknames(p.nickname).map((n) => n.toLowerCase());
-      return p.name.toLowerCase().includes(q) || nicks.some((n) => n.includes(q));
-    }), sort);
-  }, [players, search, searchMode, activeCategory, categories, sort]);
+    if (activeOriginFilter) {
+      filtered = filtered.filter(p =>
+        (p.origin || "").toLowerCase() === activeOriginFilter.toLowerCase()
+      );
+    }
+    if (activeRelFilter) {
+      filtered = filtered.filter(p =>
+        (p.relationship || "").toLowerCase() === activeRelFilter.toLowerCase()
+      );
+    }
+
+    return sortPlayers(filtered, sort);
+  }, [players, search, activeCategory, categories, sort, activeTag, activeOriginFilter, activeRelFilter]);
 
   const playerCounts = useMemo(() => {
     const counts: Record<string, number> = { all: players.length };
-    counts["dated"]   = players.filter((p) => !!p.date).length;
-    counts["undated"] = players.filter((p) => !p.date).length;
-    counts["starred"] = players.filter((p) => categories.starred.includes(p.uid)).length;
-    categories.custom.forEach((c) => {
-      counts[c.id] = players.filter((p) => c.uids.includes(p.uid)).length;
+    counts["dated"]   = players.filter(p => !!p.date).length;
+    counts["undated"] = players.filter(p => !p.date).length;
+    counts["starred"] = players.filter(p => categories.starred.includes(p.uid)).length;
+    categories.custom.forEach(c => {
+      counts[c.id] = players.filter(p => c.uids.includes(p.uid)).length;
     });
     return counts;
   }, [players, categories]);
+
+  const hasActiveFilter = activeTag || activeOriginFilter || activeRelFilter;
 
   if (!authed) return <LoginGate onLogin={() => setAuthed(true)} />;
 
@@ -173,37 +218,94 @@ export default function FriendsPage() {
         </div>
         <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-widest mb-1"
           style={{ color: "transparent", background: "linear-gradient(135deg, var(--lav-300), var(--rose-300))", backgroundClip: "text", WebkitBackgroundClip: "text" }}>
-          Celestial Archive</h1>
-        <p className="text-xs tracking-widest uppercase"
-          style={{ color: "rgba(196,181,253,0.4)" }}>Friends Access ✦</p>
+          Celestial Archive
+        </h1>
+        <p className="text-xs tracking-widest uppercase" style={{ color: "rgba(196,181,253,0.4)" }}>Friends Access ✦</p>
         <div className="divider-gold w-32 sm:w-48 mx-auto mt-4" />
       </header>
 
-      <main className="max-w-4xl mx-auto px-3 sm:px-4 pb-20">
+      <main className="max-w-5xl mx-auto px-3 sm:px-4 pb-20">
         {/* Search */}
-        <section className="mb-6 flex flex-col items-center gap-3">
-          <FriendsSearchBox
-            value={search} mode={searchMode}
-            onValueChange={setSearch}
-            onModeChange={(m) => { setSearchMode(m); setSearch(""); }}
-          />
+        <section className="mb-5">
+          <SearchBox value={search} onValueChange={setSearch} inputRef={searchInputRef} />
           {search && (
-            <p className="text-sm" style={{ color: "rgba(196,181,253,0.4)" }}>
+            <p className="text-sm text-center mt-2" style={{ color: "rgba(196,181,253,0.4)" }}>
               {displayPlayers.length === 0 ? "No traveler found"
                 : `${displayPlayers.length} result${displayPlayers.length !== 1 ? "s" : ""}`}
             </p>
           )}
         </section>
 
-        {/* Category bar + sort — only when not searching */}
+        {/* Category bar + sort */}
         {!search && (
-          <div className="mb-6 flex flex-col gap-4">
+          <div className="mb-5 flex flex-col gap-4">
             <CategoryBar categories={categories} active={activeCategory}
-              onChange={setActiveCategory} playerCounts={playerCounts} />
+              onChange={(c) => { setActiveCategory(c); }}
+              playerCounts={playerCounts} />
             <div className="flex justify-center">
               <SortControls sort={sort} onChange={setSort} />
             </div>
           </div>
+        )}
+
+        {/* Filter strip */}
+        {(allTags.length > 0 || allOrigins.length > 0 || allRelationships.length > 0) && (
+          <div className="flex flex-wrap gap-2 mb-5">
+            {allTags.map(tag => (
+              <button key={"t-"+tag}
+                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                className="text-xs px-2.5 py-1 rounded-full transition-all"
+                style={{
+                  background: activeTag === tag ? "rgba(167,139,250,0.2)" : "rgba(167,139,250,0.05)",
+                  border: `1px solid ${activeTag === tag ? "rgba(167,139,250,0.5)" : "rgba(167,139,250,0.15)"}`,
+                  color: activeTag === tag ? "rgba(167,139,250,0.9)" : "rgba(167,139,250,0.45)",
+                  cursor: "pointer",
+                }}>
+                # {tag}
+              </button>
+            ))}
+            {allOrigins.map(origin => (
+              <button key={"o-"+origin}
+                onClick={() => setActiveOriginFilter(activeOriginFilter === origin ? null : origin)}
+                className="text-xs px-2.5 py-1 rounded-full transition-all"
+                style={{
+                  background: activeOriginFilter === origin ? "rgba(45,212,191,0.2)" : "rgba(45,212,191,0.05)",
+                  border: `1px solid ${activeOriginFilter === origin ? "rgba(45,212,191,0.5)" : "rgba(45,212,191,0.15)"}`,
+                  color: activeOriginFilter === origin ? "rgba(45,212,191,0.9)" : "rgba(45,212,191,0.45)",
+                  cursor: "pointer",
+                }}>
+                @ {origin}
+              </button>
+            ))}
+            {allRelationships.map(rel => (
+              <button key={"r-"+rel}
+                onClick={() => setActiveRelFilter(activeRelFilter === rel ? null : rel)}
+                className="text-xs px-2.5 py-1 rounded-full transition-all"
+                style={{
+                  background: activeRelFilter === rel ? "rgba(200,169,110,0.2)" : "rgba(200,169,110,0.05)",
+                  border: `1px solid ${activeRelFilter === rel ? "rgba(200,169,110,0.5)" : "rgba(200,169,110,0.15)"}`,
+                  color: activeRelFilter === rel ? "rgba(200,169,110,0.9)" : "rgba(200,169,110,0.45)",
+                  cursor: "pointer",
+                }}>
+                ◆ {rel}
+              </button>
+            ))}
+            {hasActiveFilter && (
+              <button onClick={() => { setActiveTag(null); setActiveOriginFilter(null); setActiveRelFilter(null); }}
+                className="text-xs px-2 py-1 rounded-full"
+                style={{ color: "rgba(196,181,253,0.35)", border: "1px solid rgba(196,181,253,0.1)" }}>
+                ✕ clear all
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Count */}
+        {!loading && (
+          <p className="text-xs mb-4" style={{ color: "rgba(196,181,253,0.35)" }}>
+            {displayPlayers.length} entr{displayPlayers.length !== 1 ? "ies" : "y"} shown
+            {hasActiveFilter && <span style={{ color: "rgba(196,181,253,0.25)" }}> · filtered</span>}
+          </p>
         )}
 
         {/* Results */}
@@ -234,7 +336,6 @@ export default function FriendsPage() {
         )}
       </main>
 
-      {/* Footer */}
       <footer className="text-center pb-8 mt-auto">
         <div className="divider-gold w-32 mx-auto mb-4" />
         <div className="flex gap-4 justify-center">

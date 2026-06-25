@@ -10,6 +10,9 @@ import { PlayerModal } from "@/components/PlayerCard";
 
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "larry78";
 
+const toTitleCase = (str: string) =>
+  str.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+
 // ─── Star Button ──────────────────────────────────────────────────────────────
 function StarBtn({ isStarred, onToggle }: { isStarred: boolean; onToggle: () => void }) {
   return (
@@ -275,7 +278,9 @@ function EditableRow({
             <div>
               <p style={{ fontSize: "0.65rem", color: "rgba(167,139,250,0.45)", fontFamily: "'Cinzel', serif", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "0.3rem" }}>Origin</p>
               <input className="edit-input" value={draft.origin || ""}
-                onChange={(e) => set("origin", e.target.value)} placeholder="Origin / country"
+                onChange={(e) => set("origin", e.target.value)}
+                onBlur={(e) => e.target.value && set("origin", toTitleCase(e.target.value))}
+                placeholder="Origin / country"
                 style={{ fontSize: "0.85rem" }} />
             </div>
 
@@ -565,6 +570,8 @@ export default function AdminPage() {
   const [searchNotes, setSearchNotes] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [activeOriginFilter, setActiveOriginFilter] = useState<string | null>(null);
+  const [activeRelFilter, setActiveRelFilter] = useState<string | null>(null);
   const [sort, setSort] = useState<SortConfig>({ field: "date", order: "asc" });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -736,6 +743,20 @@ export default function AdminPage() {
       );
     }
 
+    // Origin filter (case-insensitive)
+    if (activeOriginFilter) {
+      filtered = filtered.filter(({ p }) =>
+        (p.origin || "").toLowerCase() === activeOriginFilter.toLowerCase()
+      );
+    }
+
+    // Relationship filter (case-insensitive)
+    if (activeRelFilter) {
+      filtered = filtered.filter(({ p }) =>
+        (p.relationship || "").toLowerCase() === activeRelFilter.toLowerCase()
+      );
+    }
+
     const sorted = [...filtered].sort((a, b) => {
       let cmp = 0;
       if (sort.field === "date") {
@@ -755,7 +776,7 @@ export default function AdminPage() {
     });
 
     return sorted;
-  }, [players, search, activeCategory, activeTag, categories, sort, searchNotes]);
+  }, [players, search, activeCategory, activeTag, activeOriginFilter, activeRelFilter, categories, sort, searchNotes]);
 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
@@ -1165,10 +1186,11 @@ export default function AdminPage() {
                 <CategoryBar categories={categories} active={activeCategory}
                   onChange={(cat) => { setActiveCategory(cat); setSelectedUids(new Set()); }}
                   playerCounts={playerCounts} />
-                {allTags.length > 0 && (
+                {(allTags.length > 0 || allOrigins.length > 0 || allRelationships.length > 0) && (
                   <div className="flex flex-wrap gap-2 mt-3">
+                    {/* Tags */}
                     {allTags.map(tag => (
-                      <button key={tag}
+                      <button key={"t-"+tag}
                         onClick={() => setActiveTag(activeTag === tag ? null : tag)}
                         className="text-xs px-2.5 py-1 rounded-full transition-all"
                         style={{
@@ -1180,11 +1202,40 @@ export default function AdminPage() {
                         # {tag}
                       </button>
                     ))}
-                    {activeTag && (
-                      <button onClick={() => setActiveTag(null)}
+                    {/* Origins */}
+                    {allOrigins.map(origin => (
+                      <button key={"o-"+origin}
+                        onClick={() => setActiveOriginFilter(activeOriginFilter === origin ? null : origin)}
+                        className="text-xs px-2.5 py-1 rounded-full transition-all"
+                        style={{
+                          background: activeOriginFilter === origin ? "rgba(45,212,191,0.2)" : "rgba(45,212,191,0.05)",
+                          border: `1px solid ${activeOriginFilter === origin ? "rgba(45,212,191,0.5)" : "rgba(45,212,191,0.15)"}`,
+                          color: activeOriginFilter === origin ? "rgba(45,212,191,0.9)" : "rgba(45,212,191,0.45)",
+                          cursor: "pointer",
+                        }}>
+                        @ {origin}
+                      </button>
+                    ))}
+                    {/* Relationships */}
+                    {allRelationships.map(rel => (
+                      <button key={"r-"+rel}
+                        onClick={() => setActiveRelFilter(activeRelFilter === rel ? null : rel)}
+                        className="text-xs px-2.5 py-1 rounded-full transition-all"
+                        style={{
+                          background: activeRelFilter === rel ? "rgba(200,169,110,0.2)" : "rgba(200,169,110,0.05)",
+                          border: `1px solid ${activeRelFilter === rel ? "rgba(200,169,110,0.5)" : "rgba(200,169,110,0.15)"}`,
+                          color: activeRelFilter === rel ? "rgba(200,169,110,0.9)" : "rgba(200,169,110,0.45)",
+                          cursor: "pointer",
+                        }}>
+                        ◆ {rel}
+                      </button>
+                    ))}
+                    {/* Clear all */}
+                    {(activeTag || activeOriginFilter || activeRelFilter) && (
+                      <button onClick={() => { setActiveTag(null); setActiveOriginFilter(null); setActiveRelFilter(null); }}
                         className="text-xs px-2 py-1 rounded-full"
                         style={{ color: "rgba(196,181,253,0.35)", border: "1px solid rgba(196,181,253,0.1)" }}>
-                        ✕ clear
+                        ✕ clear all
                       </button>
                     )}
                   </div>
